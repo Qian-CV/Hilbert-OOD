@@ -19,52 +19,52 @@ def rotate_image(image, angle):
 
 def rotate_image_arbitrary(image, angle):
     """
-    任意角度旋转图像，包含padding和resize操作
+    任意角度旋转图像，使用0 padding扩展到2倍尺寸
     """
     # 获取图像尺寸
     h, w = image.shape[:2]
-    # 获取图像中心点
-    center = (w // 2, h // 2)
-
+    
+    # 创建2倍大小的画布
+    padded_h = h * 2
+    padded_w = w * 2
+    
+    # 创建填充后的图像
+    padded_image = np.zeros((padded_h, padded_w), dtype=image.dtype)
+    
+    # 将原图放在中心位置
+    start_h = (padded_h - h) // 2
+    start_w = (padded_w - w) // 2
+    padded_image[start_h:start_h+h, start_w:start_w+w] = image
+    
+    # 获取填充后图像的中心点
+    center = (padded_w // 2, padded_h // 2)
+    
     # 计算旋转矩阵
     M = cv2.getRotationMatrix2D(center, -angle, 1.0)  # 注意OpenCV中角度是逆时针为负
-
-    # 计算新图像的边界
-    cos = np.abs(M[0, 0])
-    sin = np.abs(M[0, 1])
-    new_w = int((h * sin) + (w * cos))
-    new_h = int((h * cos) + (w * sin))
-
-    # 调整旋转矩阵以考虑平移
-    M[0, 2] += (new_w / 2) - center[0]
-    M[1, 2] += (new_h / 2) - center[1]
-
-    # 进行旋转，使用白色填充空白区域
-    rotated = cv2.warpAffine(image.astype(np.float32), M, (new_w, new_h), 
-                            borderMode=cv2.BORDER_CONSTANT, 
+    
+    # 进行旋转，使用0填充空白区域
+    rotated = cv2.warpAffine(padded_image.astype(np.float32), M, (padded_w, padded_h),
+                            borderMode=cv2.BORDER_CONSTANT,
                             borderValue=0)
-
-    # resize回原始大小
-    rotated = cv2.resize(rotated, (w, h), interpolation=cv2.INTER_LINEAR)
     
     return rotated
 
-def get_hilbert_sequence(image):
+def get_hilbert_sequence(image, order=3, dimension=2):
     """
     获取图像对应的Hilbert曲线一维序列
     """
-    p = 2  # 阶数
-    N = 2  # 维度
-    hilbert_curve = HilbertCurve(p, N)
+    hilbert_curve = HilbertCurve(order, dimension)
     
     hilbert_path = []
-    for i in range(16):
+
+    for i in range(2**(order*2)):
         coords = hilbert_curve.point_from_distance(i)
         x, y = coords[0], coords[1]
-        if 0 <= x < 4 and 0 <= y < 4:
+        if 0 <= x < order and 0 <= y < order:
             hilbert_path.append((x, y))
     
-    return [image[x, y] for x, y in hilbert_path]
+    # 返回Hilbert路径对应的图像像素值
+    return [image[y, x] for x, y in hilbert_path]
 
 def visualize_and_save_sequences(original_image, angles=None, show_image=True):
     """
