@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from hilbertcurve.hilbertcurve import HilbertCurve
 import cv2
+import os
 
 # 设置中文字体
 plt.rcParams['font.sans-serif'] = ['SimHei']  # 用来正常显示中文标签
@@ -65,12 +66,15 @@ def get_hilbert_sequence(image):
     
     return [image[x, y] for x, y in hilbert_path]
 
-def visualize_and_save_sequences(original_image, angles=None):
+def visualize_and_save_sequences(original_image, angles=None, show_image=True):
     """
     可视化不同角度旋转后的图像和对应的一维序列，并保存结果
     """
     if angles is None:
         angles = [0, 90, 180, 270]
+
+    save_dir = 'hilbert_visualization'
+    os.makedirs(save_dir, exist_ok=True)
 
     # 打开文件准备写入结果，指定编码为utf-8
     with open('hilbert_sequences_oriented.txt', 'w', encoding='utf-8') as f:
@@ -130,8 +134,13 @@ def visualize_and_save_sequences(original_image, angles=None):
                         ha='center', va='center', color='white')
             plt.grid(True)
             
-            plt.tight_layout()
-            plt.show()
+            plt.tight_layout()        # 保存图像
+            plt.savefig(os.path.join(save_dir, f'rotation_{angle}_degrees.png'))
+
+            if show_image:
+                plt.show()
+            else:
+                plt.close()
 
 
 def main():
@@ -145,7 +154,7 @@ def main():
 
     # 测试不同角度，包括非90度的角度
     angles = [0, 45, 90, 135, 180, 225, 270, 315]
-    visualize_and_save_sequences(original_image, angles=angles)
+    visualize_and_save_sequences(original_image, angles=angles, show_image=False)
 
 
 if __name__ == "__main__":
