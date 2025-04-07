@@ -25,40 +25,27 @@ def rotate_image_arbitrary(image, angle):
     # 获取图像尺寸
     h, w = image.shape[:2]
     
-    # 创建2倍大小的画布
-    padded_h = h * 2
-    padded_w = w * 2
-    
-    # 创建填充后的图像
-    padded_image = np.zeros((padded_h, padded_w), dtype=image.dtype)
-    
-    # 将原图放在中心位置
-    start_h = (padded_h - h) // 2
-    start_w = (padded_w - w) // 2
-    padded_image[start_h:start_h+h, start_w:start_w+w] = image
-    
+ 
     # 获取填充后图像的中心点
-    center = (padded_w // 2, padded_h // 2)
+    center = (w // 2, h // 2)
     
     # 计算旋转矩阵
     M = cv2.getRotationMatrix2D(center, -angle, 1.0)  # 注意OpenCV中角度是逆时针为负
     
     # 进行旋转，保持原像素值不变
-    rotated = cv2.warpAffine(padded_image.astype(np.uint8), M, (padded_w, padded_h),
+    rotated = cv2.warpAffine(image.astype(np.uint8), M, (w, h),
                             borderMode=cv2.BORDER_CONSTANT,
                             borderValue=0)
     
     # 记录填充位置的索引
-    original_area = padded_image[start_h:start_h+h, start_w:start_w+w]
+    # original_area = padded_image[start_h:start_h+h, start_w:start_w+w]
     padding_indices = []
 
     # 只记录新添加的填充像素
-    for i in range(padded_h):
-        for j in range(padded_w):
+    for i in range(h):
+        for j in range(w):
             if rotated[i, j] == 0:
-                # 判断是否不在原图放置的区域内
-                if not (start_h <= i < start_h+h and start_w <= j < start_w+w):
-                    padding_indices.append((i, j))
+                padding_indices.append((i, j))
     
     return rotated, padding_indices
 
