@@ -25,27 +25,26 @@ def rotate_image_arbitrary(image, angle):
     # 获取图像尺寸
     h, w = image.shape[:2]
     
- 
     # 获取填充后图像的中心点
     center = (w // 2, h // 2)
     
+    # 创建 2w×2h 全零画布
+    canvas = np.zeros((2*h, 2*w), dtype=np.uint8)
+    # 将原图像放入中心位置
+    canvas[h//2:3*h//2, w//2:3*w//2] = image
+    # 获取画布的中心点
+    canvas_center = (2*w//2, 2*h//2)
+
     # 计算旋转矩阵
-    M = cv2.getRotationMatrix2D(center, -angle, 1.0)  # 注意OpenCV中角度是逆时针为负
+    M = cv2.getRotationMatrix2D(canvas_center, -angle, 1.0)  # 注意OpenCV中角度是逆时针为负
     
     # 进行旋转，保持原像素值不变
-    rotated = cv2.warpAffine(image.astype(np.uint8), M, (w, h),
-                            borderMode=cv2.BORDER_CONSTANT,
+    rotated = cv2.warpAffine(canvas.astype(np.uint8), M, (2*w, 2*h),
+                            flags=cv2.INTER_NEAREST,
                             borderValue=0)
     
-    # 记录填充位置的索引
-    # original_area = padded_image[start_h:start_h+h, start_w:start_w+w]
-    padding_indices = []
-
-    # 只记录新添加的填充像素
-    for i in range(h):
-        for j in range(w):
-            if rotated[i, j] == 0:
-                padding_indices.append((i, j))
+    # 找到 padding 的索引（值为0的位置）
+    padding_indices = np.argwhere(rotated == 0)
     
     return rotated, padding_indices
 
@@ -67,19 +66,37 @@ def get_hilbert_sequence(image, padding_indices=None):
     # 返回Hilbert路径对应的图像像素值，排除padding_indices中的位置
     sequence = [image[y, x] for x, y in hilbert_path]
     
-    # 删除padding_indices中的位置
-    if padding_indices is not None:
-        sequence = [value for idx, value in enumerate(sequence) if (idx not in padding_indices)]
+    # 删除sequence中所有值为0或者相邻重复的元素         
+    # 创建一个新的序列，用于存储有效的像素值
+    filtered_sequence = []
+    for value in sequence:
+        # 仅当值不为0且在filtered_sequence中不存在时，才将其添加
+        if value != 0 and value not in filtered_sequence:
+            filtered_sequence.append(value)
+    sequence = filtered_sequence
     
     # 确保返回的序列长度为16
     return sequence
+
+def display_sequence(sequence, angle):
+    """
+    显示一维序列
+    """
+    sequence_image = np.array(sequence).reshape(1, -1)
+    plt.imshow(sequence_image, cmap='viridis', aspect='auto')
+    plt.colorbar()
+    plt.title(f'旋转{angle}度后的一维序列')
+    for i in range(len(sequence)):
+        plt.text(i, 0, f"{sequence[i]}", 
+                ha='center', va='center', color='white')
+    plt.grid(True)
 
 def visualize_and_save_sequences(original_image, angles=None, show_image=False):
     """
     可视化不同角度旋转后的图像和对应的一维序列，并保存结果
     """
     # 获取图像尺寸
-    h, w = original_image.shape[:2]
+    original_h, original_w = original_image.shape[:2]
 
     if angles is None:
         angles = [0, 90, 180, 270]
@@ -98,9 +115,9 @@ def visualize_and_save_sequences(original_image, angles=None, show_image=False):
             else:
                 # 对于任意角度使用新的方法
                 rotated_image, padding_indices = rotate_image_arbitrary(original_image, angle)
-                h, w = rotated_image.shape[:2]
-                # padding_image_h = 2**(int(np.log2(h))+1)
-                # padding_image_w = padding_image_h
+           
+            # 获取旋转后的图像尺寸
+            h, w = rotated_image.shape[:2]
             
             # 获取一维序列
             sequence = get_hilbert_sequence(rotated_image, padding_indices)
@@ -141,14 +158,7 @@ def visualize_and_save_sequences(original_image, angles=None, show_image=False):
             
             # 显示一维展开的序列
             plt.subplot(133)
-            sequence_image = np.array(sequence).reshape(1, -1)
-            plt.imshow(sequence_image, cmap='viridis', aspect='auto')
-            plt.colorbar()
-            plt.title(f'旋转{angle}度后的一维序列')
-            for i in range(h*w):
-                plt.text(i, 0, f"{sequence[i]}", 
-                        ha='center', va='center', color='white')
-            plt.grid(True)
+            display_sequence(sequence, angle)
             
             plt.tight_layout()        # 保存图像
             plt.savefig(os.path.join(save_dir, f'rotation_{angle}_degrees.png'))
@@ -169,8 +179,8 @@ def main():
     ])
 
     # 测试不同角度，包括非90度的角度
-    # angles = [0, 45, 90, 135, 180, 225, 270, 315]
-    angles = [45, 135, 225, 315]
+    angles = [0, 45, 90, 135, 180, 225, 270, 315]
+    # angles = [45, 135, 225, 315]
     # angles = [0, 90, 180, 270]
     visualize_and_save_sequences(original_image, angles=angles, show_image=False)
 
