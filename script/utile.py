@@ -1,5 +1,6 @@
 import os
 from PIL import Image
+import numpy as np
 
 def create_gif_from_pngs(folder_path, output_gif_path, duration=800):
     """
@@ -21,5 +22,36 @@ def create_gif_from_pngs(folder_path, output_gif_path, duration=800):
     # 保存为GIF动图
     images[0].save(output_gif_path, save_all=True, append_images=images[1:], duration=duration, loop=0)
 
+# 计算两个向量之间的欧几里得距离
+def euclidean_distance(seq1, seq2):
+    return np.sqrt(np.sum((np.array(seq1) - np.array(seq2)) ** 2))
+
+# 计算两个向量之间的内积
+def inner_product(seq1, seq2):
+    return np.dot(seq1, seq2)
+
+# 计算两个向量之间的余弦相似度
+def cosine_similarity(seq1, seq2):
+    return np.dot(seq1, seq2) / (np.linalg.norm(seq1) * np.linalg.norm(seq2))
+
+# 计算两个向量之间的曼哈顿距离
+def manhattan_distance(seq1, seq2):
+    return np.sum(np.abs(np.array(seq1) - np.array(seq2)))
+
+# 计算两个向量之间的切比雪夫距离
+def chebyshev_distance(seq1, seq2):
+    return np.max(np.abs(np.array(seq1) - np.array(seq2)))
+
+# 计算两个向量之间的杰卡德相似度    
+def jaccard_similarity(seq1, seq2):
+    intersection = set(seq1) & set(seq2)
+    union = set(seq1) | set(seq2)
+    return len(intersection) / len(union)
+
+# 计算两个向量之间的汉明距离
+def hamming_distance(seq1, seq2):
+    return np.sum(np.array(seq1) != np.array(seq2))
+
+
 if __name__ == "__main__":
-    create_gif_from_pngs('hilbert_visualization', 'hilbert_visualization/hilbert_visualization.gif')
+    create_gif_from_pngs('G:/PhD_file/co_work/Hilbert-MQ+WLQ-nips/2实验数据/2_hilbert旋转等变-任意角度/hilbert_visualization', 'G:/PhD_file/co_work/Hilbert-MQ+WLQ-nips/2实验数据/2_hilbert旋转等变-任意角度/hilbert_visualization/hilbert_visualization.gif')
