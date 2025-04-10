@@ -1,17 +1,18 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from typing import Optional
+from typing import Optional, Tuple
 
 import torch
 from mmdet.models.losses import accuracy
-from mmdet.models.roi_heads.bbox_heads import Shared2FCBBoxHead
 from mmdet.structures.bbox import get_box_tensor
 from torch import Tensor
 
+from mmrotate.models.roi_heads.bbox_heads import RotatedShared2FCBBoxHead
 from mmrotate.registry import MODELS
 
+from script.hilber_script_oriented import hilbert_flatten
 
 @MODELS.register_module()
-class RotatedShared2FCBBoxHead(Shared2FCBBoxHead):
+class HilbertRotatedShared2FCBBoxHead(RotatedShared2FCBBoxHead):
     """Rotated Shared2FC RBBox head.
 
     Args:
@@ -25,6 +26,64 @@ class RotatedShared2FCBBoxHead(Shared2FCBBoxHead):
                  **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.loss_bbox_type = loss_bbox_type
+
+    def forward(self, x: Tuple[Tensor]) -> tuple:
+        """Forward features from the upstream network.
+
+        Args:
+            x (tuple[Tensor]): Features from the upstream network, each is
+                a 4D-tensor.
+
+        Returns:
+            tuple: A tuple of classification scores and bbox prediction.
+
+                - cls_score (Tensor): Classification scores for all \
+                    scale levels, each is a 4D-tensor, the channels number \
+                    is num_base_priors * num_classes.
+                - bbox_pred (Tensor): Box energies / deltas for all \
+                    scale levels, each is a 4D-tensor, the channels number \
+                    is num_base_priors * 4.
+        """
+        # shared part
+        if self.num_shared_convs > 0:
+            for conv in self.shared_convs:
+                x = conv(x)
+
+        if self.num_shared_fcs > 0:
+            if self.with_avg_pool:
+                x = self.avg_pool(x)
+
+            # Hilbert flatten
+            x = hilbert_flatten(x)
+            # x = x.flatten(1)
+
+            for fc in self.shared_fcs:
+                x = self.relu(fc(x))
+        # separate branches
+        x_cls = x
+        x_reg = x
+
+        for conv in self.cls_convs:
+            x_cls = conv(x_cls)
+        if x_cls.dim() > 2:
+            if self.with_avg_pool:
+                x_cls = self.avg_pool(x_cls)
+            x_cls = x_cls.flatten(1)
+        for fc in self.cls_fcs:
+            x_cls = self.relu(fc(x_cls))
+
+        for conv in self.reg_convs:
+            x_reg = conv(x_reg)
+        if x_reg.dim() > 2:
+            if self.with_avg_pool:
+                x_reg = self.avg_pool(x_reg)
+            x_reg = x_reg.flatten(1)
+        for fc in self.reg_fcs:
+            x_reg = self.relu(fc(x_reg))
+
+        cls_score = self.fc_cls(x_cls) if self.with_cls else None
+        bbox_pred = self.fc_reg(x_reg) if self.with_reg else None
+        return cls_score, bbox_pred
 
     def loss(self,
              cls_score: Tensor,
