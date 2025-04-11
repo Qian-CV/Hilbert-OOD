@@ -1,5 +1,5 @@
 _base_ = [
-    '../_base_/datasets/hrsc_no_aug.py', '../_base_/schedules/schedule_3x.py',
+    '../_base_/datasets/hrsc_no_aug.py', '../_base_/schedules/schedule_6x.py',
     '../_base_/default_runtime.py'
 ]
 
@@ -16,23 +16,23 @@ model = dict(
         boxtype2tensor=False),
     backbone=dict(
         type='mmdet.ResNet',
-        depth=50,
+        depth=34,
         num_stages=4,
         out_indices=(0, 1, 2, 3),
         frozen_stages=1,
         norm_cfg=dict(type='BN', requires_grad=True),
         norm_eval=True,
         style='pytorch',
-        init_cfg=dict(type='Pretrained', checkpoint='torchvision://resnet50')),
+        init_cfg=dict(type='Pretrained', checkpoint='torchvision://resnet34')),
     neck=dict(
         type='mmdet.FPN',
-        in_channels=[256, 512, 1024, 2048],
-        out_channels=256,
+        in_channels=[64, 128, 256, 512],
+        out_channels=64,
         num_outs=5),
     rpn_head=dict(
         type='OrientedRPNHead',
-        in_channels=256,
-        feat_channels=256,
+        in_channels=64,
+        feat_channels=64,
         anchor_generator=dict(
             type='mmdet.AnchorGenerator',
             scales=[8],
@@ -59,12 +59,12 @@ model = dict(
                 out_size=8,
                 sample_num=2,
                 clockwise=True),
-            out_channels=256,
+            out_channels=64,
             featmap_strides=[4, 8, 16, 32]),
         bbox_head=dict(
-            type='HilbertRotatedShared2FCBBoxHead',
+            type='RotatedShared2FCBBoxHead',
             predict_box_type='rbox',
-            in_channels=256,
+            in_channels=64,
             fc_out_channels=1024,
             roi_feat_size=8,
             num_classes=1,
@@ -148,6 +148,5 @@ default_hooks = dict(
                     save_best='auto',
                     rule='greater'))
 train_cfg = dict(type='EpochBasedTrainLoop', val_interval=interval)
-
-work_dir = './work_dirs/hrsc/HERO/HERO-le90_r50_fpn_3x_hrsc2016_lr5e3/'
-# work_dir = './work_dirs/shishi/'
+work_dir = './work_dirs/hrsc/o_rcnn/oriented-rcnn-le90_r34_fpn_6x_hrsc2016_baseline/'
+# work_dir = './work_dirs/shishi

@@ -1,5 +1,5 @@
 _base_ = [
-    '../_base_/datasets/hrsc_rr.py', '../_base_/schedules/schedule_6x.py',
+    '../_base_/datasets/hrsc_no_aug.py', '../_base_/schedules/schedule_3x.py',
     '../_base_/default_runtime.py'
 ]
 
@@ -56,17 +56,17 @@ model = dict(
             type='RotatedSingleRoIExtractor',
             roi_layer=dict(
                 type='RoIAlignRotated',
-                out_size=7,
+                out_size=8,
                 sample_num=2,
                 clockwise=True),
             out_channels=256,
             featmap_strides=[4, 8, 16, 32]),
         bbox_head=dict(
-            type='mmdet.Shared2FCBBoxHead',
+            type='RotatedShared2FCBBoxHead',
             predict_box_type='rbox',
             in_channels=256,
             fc_out_channels=1024,
-            roi_feat_size=7,
+            roi_feat_size=8,
             num_classes=1,
             reg_predictor_cfg=dict(type='mmdet.Linear'),
             cls_predictor_cfg=dict(type='mmdet.Linear'),
@@ -148,5 +148,5 @@ default_hooks = dict(
                     save_best='auto',
                     rule='greater'))
 train_cfg = dict(type='EpochBasedTrainLoop', val_interval=interval)
-work_dir = './work_dirs/hrsc/o_rcnn/oriented-rcnn-le90_r50_fpn_6x_hrsc2016/'
+work_dir = './work_dirs/hrsc/o_rcnn/oriented-rcnn-le90_r50_fpn_3x_hrsc2016_lr5e3/'
 # work_dir = './work_dirs/shishi/'
