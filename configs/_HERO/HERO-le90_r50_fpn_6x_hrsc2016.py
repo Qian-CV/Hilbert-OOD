@@ -1,5 +1,5 @@
 _base_ = [
-    '../_base_/datasets/hrsc_no_aug.py', '../_base_/schedules/schedule_3x.py',
+    '../_base_/datasets/hrsc_no_aug.py', '../_base_/schedules/schedule_6x.py',
     '../_base_/default_runtime.py'
 ]
 
@@ -30,7 +30,8 @@ model = dict(
         out_channels=256,
         num_outs=5),
     rpn_head=dict(
-        type='OrientedRPNHead',
+        type='HilbertRPNHead',
+        use_cross_attention=False,
         in_channels=256,
         feat_channels=256,
         anchor_generator=dict(
@@ -149,5 +150,5 @@ default_hooks = dict(
                     rule='greater'))
 train_cfg = dict(type='EpochBasedTrainLoop', val_interval=interval)
 
-work_dir = './work_dirs/hrsc/HERO/HERO-le90_r50_fpn_3x_hrsc2016_lr5e3/'
+work_dir = './work_dirs/hrsc/HERO/HERO-le90_r50_fpn_6x_hrsc2016_lr5e3_hilbert_conv1*3/'
 # work_dir = './work_dirs/shishi/'

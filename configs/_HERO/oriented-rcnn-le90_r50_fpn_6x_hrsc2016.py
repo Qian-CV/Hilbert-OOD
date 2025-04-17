@@ -1,5 +1,5 @@
 _base_ = [
-    '../_base_/datasets/hrsc_no_aug.py', '../_base_/schedules/schedule_3x.py',
+    '../_base_/datasets/hrsc_no_aug.py', '../_base_/schedules/schedule_6x.py',
     '../_base_/default_runtime.py'
 ]
 
@@ -148,5 +148,5 @@ default_hooks = dict(
                     save_best='auto',
                     rule='greater'))
 train_cfg = dict(type='EpochBasedTrainLoop', val_interval=interval)
-work_dir = './work_dirs/hrsc/o_rcnn/oriented-rcnn-le90_r50_fpn_3x_hrsc2016_lr5e3/'
-# work_dir = './work_dirs/shishi/'
+# work_dir = './work_dirs/hrsc/o_rcnn/oriented-rcnn-le90_r50_fpn_6x_hrsc2016_lr5e3/'
+work_dir = './work_dirs/shishi/'

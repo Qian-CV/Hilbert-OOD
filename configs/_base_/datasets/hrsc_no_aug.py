@@ -8,6 +8,7 @@ train_pipeline = [
     dict(type='mmdet.LoadAnnotations', with_bbox=True, box_type='qbox'),
     dict(type='ConvertBoxType', box_type_mapping=dict(gt_bboxes='rbox')),
     dict(type='mmdet.Resize', scale=(512, 512), keep_ratio=True),
+    dict(type='mmdet.Pad', size=(512, 512), pad_val=dict(img=(114, 114, 114))),
     # dict(
     #     type='mmdet.RandomFlip',
     #     prob=0.75,
@@ -17,6 +18,7 @@ train_pipeline = [
 val_pipeline = [
     dict(type='mmdet.LoadImageFromFile', backend_args=backend_args),
     dict(type='mmdet.Resize', scale=(512, 512), keep_ratio=True),
+    dict(type='mmdet.Pad', size=(512, 512), pad_val=dict(img=(114, 114, 114))),
     # avoid bboxes being resized
     dict(type='mmdet.LoadAnnotations', with_bbox=True, box_type='qbox'),
     dict(type='ConvertBoxType', box_type_mapping=dict(gt_bboxes='rbox')),
@@ -28,6 +30,7 @@ val_pipeline = [
 test_pipeline = [
     dict(type='mmdet.LoadImageFromFile', backend_args=backend_args),
     dict(type='mmdet.Resize', scale=(512, 512), keep_ratio=True),
+    dict(type='mmdet.Pad', size=(512, 512), pad_val=dict(img=(114, 114, 114))),
     dict(
         type='mmdet.PackDetInputs',
         meta_keys=('img_id', 'img_path', 'ori_shape', 'img_shape',

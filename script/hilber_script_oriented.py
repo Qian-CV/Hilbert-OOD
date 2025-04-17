@@ -201,6 +201,36 @@ def hilbert_flatten(tensor):
     return flattened_sequences.view(n, -1)
 
 
+def hilbert_unflatten(tensor):
+    """
+    输入一个形状为 (n, c, h * w) 的张量(hilbert带通道序列seq)，输出一个4D张量
+    tensor: 形状为 [4090, 256, 64] 的张量
+    返回: 形状为 [4090, 256, 8, 8] 的张量
+    """
+    n, c, flat_size = tensor.shape
+    h = int(np.sqrt(flat_size))
+    w = h
+
+    if flat_size != h * w:
+        raise ValueError(f"展平的张量大小 {flat_size} 与原始张量的大小 {h * w} 不匹配")
+
+    # 创建Hilbert曲线对象
+    hilbert_curve = HilbertCurve(int(np.log2(h)), 2)
+
+    # 计算Hilbert曲线的索引
+    hilbert_indices = torch.tensor([hilbert_curve.point_from_distance(i) for i in range(h * w)])
+
+    # 创建一个与原始特征图相同形状的零张量
+    unflattened_tensor = torch.zeros((n, c, h, w), device=tensor.device)
+
+    # 使用索引填充
+    for i in range(h * w):
+        row, col = hilbert_indices[i]
+        unflattened_tensor[:, :, row, col] = tensor[:, :, i]
+
+    return unflattened_tensor
+
+
 def main():
     # 创建4x4的原始图像
     original_image = np.array([
@@ -218,4 +248,22 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    # 设置随机种子以便复现
+    torch.manual_seed(0)
+
+    # 1. 创建一个随机的 4D 特征张量
+    n, c, h, w = 4090, 256, 8, 8  # 你可以根据需要调整这些参数
+    original_tensor = torch.rand((n, c, h, w))
+
+    # 2. 使用 hilbert_flatten 函数将其展平
+    flattened_tensor = hilbert_flatten(original_tensor)
+
+    # 3. 使用 hilbert_unflatten 函数将展平后的张量重构回原始形状
+    reconstructed_tensor = hilbert_unflatten(flattened_tensor.view(4090, 256, -1), original_tensor.shape)
+
+    # 4. 比较重构后的张量与原始张量是否相同
+    # 使用 torch.allclose 来比较两个张量是否相等，允许一定的浮动误差
+    if torch.allclose(original_tensor, reconstructed_tensor):
+        print("验证成功：重构后的张量与原始张量相同！")
+    else:
+        print("验证失败：重构后的张量与原始张量不同！")
